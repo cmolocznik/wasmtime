@@ -114,6 +114,13 @@ pub use values::*;
 #[cfg(feature = "pooling-allocator")]
 pub use vm::{PoolConcurrencyLimitError, PoolingAllocatorMetrics};
 
+// Exposed for embedders integrating non-wasmtime fiber implementations
+// (e.g. corosensei) — these types let an embedder save/restore the
+// per-thread CallThreadState linked list around manual stack switches.
+// Wasmtime's own async support uses these internally.
+#[cfg(feature = "async")]
+pub use vm::{AsyncWasmCallState, PreviousAsyncWasmCallState};
+
 #[cfg(feature = "profiling")]
 mod profiling;
 #[cfg(feature = "profiling")]
