@@ -692,6 +692,21 @@ mod call_thread_state {
                     &mut (*self.old_state).last_wasm_entry_trap_handler,
                 );
                 swap(&cx.stack_chain, &mut (*self.old_state).stack_chain);
+
+                // stack_limit also needs to be swapped here for embedders
+                // that integrate non-wasmtime fibers (e.g. corosensei)
+                // where multiple stacks may interleave wasm calls on the
+                // same Store. `EntryStoreContext::stack_limit` is `Option`:
+                // `Some` means this entry replaced the store's prior limit
+                // (the typical non-recursive case), `None` means a
+                // recursive same-stack call that left the limit alone. We
+                // only swap when there's something to swap — leaving the
+                // None case as a no-op preserves the outer limit.
+                if let Some(saved) = (*self.old_state).stack_limit {
+                    let prev_in_store = *cx.stack_limit.get();
+                    *cx.stack_limit.get() = saved;
+                    (*self.old_state).stack_limit = Some(prev_in_store);
+                }
             }
         }
     }
